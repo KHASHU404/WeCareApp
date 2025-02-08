@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">WeCareApp</string>
+    <string name="default_web_client_id">448337353788-1c1qoi6joh9g4unbfom48c34tu4djkg3.apps.googleusercontent.com</string>
 </resources>

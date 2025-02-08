@@ -8,14 +8,18 @@ buildscript {
         kotlinVersion = "2.0.21"
     }
     repositories {
-        google()
+        google()  // ✅ Ensure this is present
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
+        classpath("com.android.tools.build:gradle:8.2.0") // ✅ Specify Gradle Plugin Version
+        classpath("com.google.gms:google-services:4.4.2") // ✅ Add Google Services Plugin Dependency
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 
+
+// ✅ Ensure Google Services Plugin is applied properly
+apply plugin: 'com.google.gms.google-services'
 apply plugin: "com.facebook.react.rootproject"
