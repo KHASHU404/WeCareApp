@@ -3,11 +3,11 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer, NavigationIndependentTree } from "@react-navigation/native";
 import { View, Text } from "react-native";
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import HomeTab from './HomeTab'
 
 const HomeScreen = () => (
   <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-    <Text>Home Screen</Text>
+    <HomeTab />
   </View>
 );
 

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "448337353788-qhm5hd1i0b8n2ll8n2v8nbkpjgc149u6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wecareapp",
+            "certificate_hash": "53d599e77ecc3a83a196b71127795f65c41582db"
+          }
+        },
+        {
           "client_id": "448337353788-1c1qoi6joh9g4unbfom48c34tu4djkg3.apps.googleusercontent.com",
           "client_type": 3
         }
