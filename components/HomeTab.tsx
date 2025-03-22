@@ -1,123 +1,53 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet,PermissionsAndroid,Platform, TouchableOpacity, Alert } from "react-native";
-import MapView, { PROVIDER_GOOGLE,Marker, Region } from "react-native-maps";
-import Geolocation from "@react-native-community/geolocation";
+import React from "react";
+import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity,Dimensions } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 
-
-
-const HomeScreen = () => {
-  const [region, setRegion] = useState<Region | null>(null);
-
-  useEffect(() => {
-    // Request the current position
-    const _getLocationPermission = async () => {
-      if (Platform.OS === "android") {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: "Location Permission",
-              message: "This app needs access to your location.",
-              buttonNeutral: "Ask Later",
-              buttonNegative: "Cancel",
-              buttonPositive: "OK",
-            }
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            // Fetch location after permission is granted
-            console.log("permission granted location" )
-            Geolocation.getCurrentPosition(
-              (position) => {
-                const { latitude, longitude } = position.coords;
-                setRegion({
-                  latitude,
-                  longitude,
-                  latitudeDelta: 0.005,
-                  longitudeDelta: 0.005,
-                });
-              },
-
-              (error) => {
-                Alert.alert("Error", "Failed to fetch location.");
-              }
-            );
-          } else {
-            Alert.alert("Permission denied", "Location access is required.");
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      }
-    }
-    _getLocationPermission();
-  }, []);
-  console.log(region);
-
-  const handleEmergencyPress = () => {
-    // TODO: Trigger your emergency alert functionality here
-    Alert.alert("Emergency", "Emergency button pressed!");
-  };
+const HomeTab = ({ cards }) => {
+  const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
-      {region ? (
-        <MapView
-          style={styles.map}
-          initialRegion={region}
-          provider={PROVIDER_GOOGLE}
-          region={region}
-          showsUserLocation={true}
-          onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
-        >
-          <Marker coordinate={region} title="You are here" />
-        </MapView>
-      ) : (
-        <View style={styles.loadingContainer}>
-          <Text>Loading map...</Text>
-        </View>
-      )}
-      <TouchableOpacity
-        style={styles.emergencyButton}
-        onPress={handleEmergencyPress}
-      >
-        <Text style={styles.emergencyButtonText}>Emergency</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={{ flex: 1 }} >
+      <View style={styles.container}>
+        {cards.map((card, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[styles.card, {backgroundColor:(card.bgcolor || "red")} ]}
+            onPress={() => navigation.navigate(card.screen)} // Navigate to the screen dynamically
+          >
+            <MaterialIcons name={card.icon} size={40} color='white'/>
+            <Text style={styles.text}>{card.title}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
-    height: 400,
-    width: 400,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  map: {
-    
-    ...StyleSheet.absoluteFillObject,
-  },
-  loadingContainer: {
     flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    paddingTop:20,
+    flexWrap:'wrap',
+    flexDirection:'row',
+  },
+  card: {
+    height: Dimensions.get('window').width * 0.4,
+    width: Dimensions.get('window').width * 0.4,
+    backgroundColor: "red",
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 10,
+    marginBottom: 10,
+    marginLeft:20
   },
-  emergencyButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#FF3B30",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    elevation: 3,
-  },
-  emergencyButtonText: {
-    color: "#fff",
+  text: {
+    color: "white",
+    fontSize: 18,
     fontWeight: "bold",
-    fontSize: 16,
   },
 });
 
-export default HomeScreen;
+export default HomeTab;

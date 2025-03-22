@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, textAlign: 'center', marginBottom: 20 },
   input: {
     height: 50,
-    borderColor: '#ccc',
+    borderColor: '#000000',
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 10,
