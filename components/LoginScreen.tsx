@@ -108,6 +108,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor='grey'
         autoCapitalize="none"
         keyboardType="email-address"
         onChangeText={setEmail}
@@ -117,6 +118,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.passwordContainer}>
         <TextInput
           style={[styles.input, { flex: 1 }]}
+          placeholderTextColor='grey'
           placeholder="Password"
           secureTextEntry={!showPassword}
           onChangeText={setPassword}
@@ -146,7 +148,7 @@ export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 32, textAlign: 'center', marginBottom: 20 },
+  title: { fontSize: 32, textAlign: 'center', marginBottom: 20, color:'black' },
   input: {
     height: 50,
     borderColor: '#000000',
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4285F4',
+    backgroundColor: '#3944bc',
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 8,

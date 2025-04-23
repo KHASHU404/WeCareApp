@@ -66,6 +66,7 @@ const PhoneVerificationScreen: React.FC<Props> = ({ navigation, route }) => {
       <Text style={styles.title}>Verify Your Phone</Text>
       <TextInput
         style={styles.input}
+        placeholderTextColor='grey'
         placeholder="Phone Number"
         onChangeText={setPhone}
         value={phone}
@@ -75,6 +76,7 @@ const PhoneVerificationScreen: React.FC<Props> = ({ navigation, route }) => {
         <>
           <TextInput
             style={styles.input}
+            placeholderTextColor='grey'
             placeholder="Enter OTP"
             onChangeText={setOtp}
             value={otp}
@@ -90,7 +92,7 @@ export default PhoneVerificationScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, textAlign: 'center', marginBottom: 20 },
+  title: { fontSize: 24, textAlign: 'center', marginBottom: 20, color:'black' },
   input: {
     height: 50,
     borderColor: '#ccc',
@@ -98,5 +100,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingHorizontal: 10,
     borderRadius: 8,
+    color:'black'
   },
 });

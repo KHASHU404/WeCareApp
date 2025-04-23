@@ -1,72 +1,115 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import React, { useEffect, useState } from "react";
+import {Linking, View, StyleSheet, TouchableOpacity, Alert, Button, DevSettings, Image } from "react-native";
 import { ScrollView, Text } from "react-native-gesture-handler";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-import { NavigationContainer, NavigationIndependentTree } from "@react-navigation/native";
+import { NavigationIndependentTree, CommonActions } from "@react-navigation/native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeTab from "./HomeTab";
 import DetailsScreen from "./DetailsScreen";
-
-// Updated import: call a Cloud Function instead of messaging().sendMessage()
+import LocationScreen from "./LocationScreen";
 import functions from "@react-native-firebase/functions";
-import { updateLiveLocation, getNearbyUsers } from "./getnbuser/LocationService";
+import { updateLiveLocation, getNearbyUsers } from './getnbuser/LocationService';
+import ProfileScreen from './ProfileScreen';
+import ShakeDetector from './getnbuser/Shake';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, firestore } from '../firebase';
 
-// ---------- COMPONENTS / SCREENS ----------
-const LiveLocationScreen = () => {
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateLiveLocation();
-    }, 30000); // Update location every 30 seconds
 
-    return () => clearInterval(interval);
-  }, []);
 
-  return (
-    <View style={styles.liveLocationContainer}>
-      <Text style={styles.liveLocationText}>WeCare Home</Text>
-    </View>
-  );
-};
-
-const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
-
-const DetailScreen1 = () => <DetailsScreen title="Detail Screen 1" />;
-const DetailScreen2 = () => <DetailsScreen title="Detail Screen 2" />;
-const DetailScreen3 = () => <DetailsScreen title="Detail Screen 3" />;
-
-// ---------- EMERGENCY ALERT FUNCTION ----------
-const sendEmergencyAlert = async () => {
+// Define sendEmergencyAlert BEFORE it's used
+export const sendEmergencyAlert = async () => {
   try {
-    // 1. Get nearby users
+    // 1. Get nearby users and notify them via the Cloud Function
     const nearbyUsers = await getNearbyUsers();
-
     if (nearbyUsers.length === 0) {
       Alert.alert("No Nearby Users", "No users within 2 km to alert.");
       return;
     }
 
-    // 2. For each user, call the Cloud Function with their token
     for (const user of nearbyUsers) {
-      if (!user.fcmToken) continue; // skip if no token
-      await functions().httpsCallable("sendEmergencyAlert")({
-        token: user.fcmToken,
-      });
+      if (!user.fcmToken) continue; // Skip if no FCM token is available
+      await functions().httpsCallable("sendEmergencyAlert")({ token: user.fcmToken });
+    }
+    
+    // 2. Also, fetch the current user's document to get location and emergencyContacts
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.error("No user logged in when sending SMS to contacts");
+    } else {
+      const userDocRef = doc(firestore, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const location = userData.location;
+        const contacts = userData.emergencyContacts; // Expecting an array [{name: 'Contact Name', phone: '+1234567890'}, ...]
+        
+        if (location && contacts && Array.isArray(contacts)) {
+          // Create a message with a Google Maps link to the location
+          const message = `Emergency! My current location is: https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
+          
+          // For each emergency contact, open the SMS app with the pre-filled message
+          contacts.forEach((contact) => {
+            if (contact.phone) {
+              const smsUrl = `sms:${contact.phone}?body=${encodeURIComponent(message)}`;
+              Linking.openURL(smsUrl).catch((err) =>
+                console.error(`Failed to open SMS for ${contact.phone}:`, err)
+              );
+            }
+          });
+        } else {
+          console.warn("No location or emergency contacts found in user document");
+        }
+      } else {
+        console.warn("User document not found while sending SMS to contacts");
+      }
     }
 
-    Alert.alert("Alert Sent", "Nearby users have been notified.");
+    Alert.alert("Alert Sent", "Nearby users and emergency contacts have been notified.");
   } catch (error) {
     console.error("Error sending emergency alert:", error.message);
     Alert.alert("Error", "An error occurred while sending alerts.");
   }
 };
 
+
+const DetailScreen1 = () => <DetailsScreen title="Detail Screen 1" />;
+const DetailScreen2 = () => <DetailsScreen title="Detail Screen 2" />;
+const DetailScreen3 = () => <DetailsScreen title="Detail Screen 3" />;
+
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
 // ---------- STACK FOR HOME ----------
 const HomeStack = () => {
+  // Local state to hold current user's info for greeting
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  useEffect(() => {
+    // Get current user from Firebase Auth (assumes user is already logged in)
+    const { auth } = require('../firebase');
+    setCurrentUser(auth.currentUser);
+  }, []);
+  
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      {/* Greeting Header */}
+      <View style={styles.greetingContainer}>
+        {currentUser && currentUser.photoURL ? (
+          <Image
+            source={{ uri: currentUser.photoURL }}
+            style={styles.greetingImage}
+          />
+        ) : (
+          <MaterialIcons name="person" size={50} color="#ccc" />
+        )}
+        <Text style={styles.greetingText}>
+          {currentUser ? `Hello, ${currentUser.displayName || 'User'}!` : "Hello!"}
+        </Text>
+      </View>
+      
       <View style={styles.headerContainer}>
         <Text style={styles.cardHead}>Advance Features</Text>
       </View>
@@ -83,11 +126,12 @@ const HomeStack = () => {
                   {...props}
                   cards={[
                     { title: "Voice Alert", screen: "Detail1", bgcolor: "orange", icon: "mic" },
-                    { title: "Geofencing", screen: "Detail2", bgcolor: "grey", icon: "gps-fixed" },
+                    { title: "Geofencing", screen: "Geofencing", bgcolor: "grey", icon: "gps-fixed" },
                     { title: "Wearable integration", screen: "Detail3", bgcolor: "green", icon: "watch" },
                     { title: "Safety tips", screen: "Detail3", bgcolor: "#BA8E23", icon: "lightbulb" },
                   ]}
                 />
+                <ShakeDetector onEmergencyTrigger={() => console.log("Emergency Triggered!")} />
               </ScrollView>
               <Text style={styles.cardHead}>Explore more</Text>
               <ScrollView style={styles.singleCardContainer}>
@@ -107,6 +151,7 @@ const HomeStack = () => {
         <Stack.Screen name="Detail1" component={DetailScreen1} />
         <Stack.Screen name="Detail2" component={DetailScreen2} />
         <Stack.Screen name="Detail3" component={DetailScreen3} />
+        <Stack.Screen name="Geofencing" component={LocationScreen} />
       </Stack.Navigator>
     </SafeAreaView>
   );
@@ -118,11 +163,7 @@ const EmergencyScreen = () => (
     <Text>Emergency Screen</Text>
   </View>
 );
-const ProfileScreen = () => (
-  <View style={styles.centeredContainer}>
-    <Text>Profile Screen</Text>
-  </View>
-);
+
 const SettingsScreen = () => (
   <View style={styles.centeredContainer}>
     <Text>Settings Screen</Text>
@@ -131,17 +172,47 @@ const SettingsScreen = () => (
 
 // ---------- APP NAVIGATOR ----------
 export default function AppNavigator() {
+  useEffect(() => {
+    if (__DEV__) {
+      DevSettings.addMenuItem("Disable Shake Gesture", () => {
+        console.log("Shake gesture disabled for emergency detection.");
+      });
+    }
+  }, []);
+  
+  useEffect(() => {
+    console.log("AppNavigator mounted, starting location updates.");
+    updateLiveLocation(); // Immediately update once
+    const interval = setInterval(updateLiveLocation, 30000); // then every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <NavigationIndependentTree>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ color, size }) => {
-            let iconName;
-            if (route.name === "Home") iconName = "home";
-            else if (route.name === "Emergency") iconName = "warning";
-            else if (route.name === "Profile") iconName = "person";
-            else if (route.name === "Settings") iconName = "settings";
-            return <MaterialIcons name={iconName || "error"} size={size} color={color} />;
+            if (route.name === "Profile") {
+              // For Profile tab, display user's profile picture if available.
+              const { auth } = require('../firebase');
+              const currentUser = auth.currentUser;
+              if (currentUser && currentUser.photoURL) {
+                return (
+                  <Image
+                    source={{ uri: currentUser.photoURL }}
+                    style={{ width: size, height: size, borderRadius: size / 2 }}
+                  />
+                );
+              }
+              return <MaterialIcons name="person" size={size} color={color} />;
+            } else if (route.name === "Home") {
+              return <MaterialIcons name="home" size={size} color={color} />;
+            } else if (route.name === "Emergency") {
+              return <MaterialIcons name="warning" size={size} color={color} />;
+            } else if (route.name === "Settings") {
+              return <MaterialIcons name="settings" size={size} color={color} />;
+            }
+            return <MaterialIcons name="error" size={size} color={color} />;
           },
           tabBarActiveTintColor: "#FF3B30",
           tabBarInactiveTintColor: "gray",
@@ -157,8 +228,26 @@ export default function AppNavigator() {
   );
 }
 
-// ---------- STYLES ----------
+console.log(getNearbyUsers);
+
 const styles = StyleSheet.create({
+  greetingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#f7f7f7",
+  },
+  greetingImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  greetingText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
   headerContainer: {
     padding: 10,
   },
@@ -188,18 +277,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  liveLocationContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  liveLocationText: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
   centeredContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
 });
+

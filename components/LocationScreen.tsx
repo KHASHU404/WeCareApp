@@ -38,7 +38,8 @@ const LocationScreen = () => {
               },
 
               (error) => {
-                Alert.alert("Error", "Failed to fetch location.");
+                Alert.alert("Error", "Failed to fetch location.Please turn on location");
+                
               }
             );
           } else {
@@ -86,7 +87,7 @@ const LocationScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     height: 'auto',

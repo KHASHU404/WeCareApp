@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { auth, firestore } from '../firebase'; // Import Firebase auth & Firestore
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { GoogleSignin, statusCodes, } from '@react-native-google-signin/google-signin';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { NavigationProp } from '@react-navigation/native';
 
@@ -74,9 +74,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const handleGoogleSignup = async () => {
     try {
       await GoogleSignin.hasPlayServices();
-      const googleUser = await GoogleSignin.signIn(); // Perform Google Sign-In
-      
-      // Explicitly get the ID token
+      const googleUser = await GoogleSignin.signIn();
       const { idToken } = await GoogleSignin.getTokens();
   
       if (!idToken) {
@@ -84,11 +82,11 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
         return;
       }
   
-      // Use Google credentials for Firebase authentication
+      // Create Firebase credential
       const googleCredential = GoogleAuthProvider.credential(idToken);
       const userCredential = await signInWithCredential(auth, googleCredential);
   
-      // Store user info in Firestore if it doesn't exist
+      // Extract user details
       const { uid, email, displayName } = userCredential.user;
       const userDocRef = doc(firestore, 'users', uid);
       const userDocSnap = await getDoc(userDocRef);
@@ -102,9 +100,10 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       }
   
       Alert.alert('Google Sign-In Success', `Welcome ${displayName || 'User'}!`);
-      console.log("success",userCredential)
-      navigation.navigate("PhoneVerification", { uid });
+      navigation.navigate('PhoneVerification', { uid });
     } catch (error: any) {
+      console.error("Google Sign-In Error:", error);
+  
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert('Google Sign-In Cancelled', 'User cancelled sign-in.');
       } else if (error.code === statusCodes.IN_PROGRESS) {
@@ -112,11 +111,11 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         Alert.alert('Google Sign-In Error', 'Google Play Services not available.');
       } else {
-        Alert.alert('Google Sign Failed', error.message);
+        Alert.alert('Google Sign-In Failed', error.message);
       }
-      console.log("sign in error: ", error.message, error.code);
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -125,6 +124,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       {/* Manual Signup Inputs */}
       <TextInput
         style={styles.input}
+        placeholderTextColor='grey'
         placeholder="Username"
         autoCapitalize="words"
         onChangeText={setUsername}
@@ -133,6 +133,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
       <TextInput
         style={styles.input}
+        placeholderTextColor='grey'
         placeholder="Date of Birth (YYYY-MM-DD)"
         onChangeText={setDob}
         value={dob}
@@ -140,6 +141,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
       <TextInput
         style={styles.input}
+        placeholderTextColor='grey'
         placeholder="Email"
         autoCapitalize="none"
         keyboardType="email-address"
@@ -150,6 +152,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.passwordContainer}>
         <TextInput
           style={[styles.input, { flex: 1 }]}
+          placeholderTextColor='grey'
           placeholder="Password"
           secureTextEntry={!showPassword}
           onChangeText={setPassword}
@@ -179,7 +182,7 @@ export default SignupScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 32, textAlign: 'center', marginBottom: 20 },
+  title: { fontSize: 32, textAlign: 'center', marginBottom: 20, color: 'black' },
   input: {
     height: 50,
     borderColor: '#ccc',
@@ -194,7 +197,7 @@ const styles = StyleSheet.create({
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4285F4',
+    backgroundColor: '#3944bc',
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 8,
